@@ -1,3 +1,29 @@
-# This file stores configurations for your Shopify app.
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-scopes = "write_products"
+client_id = "8fd71a0d9d970607cdf1a1e5ef48570b"
+name = "remix-trial"
+application_url = "https://pix-national-eddie-alice.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "quickstart-a1b140cb.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products,write_shipping"
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [
+  "https://pix-national-eddie-alice.trycloudflare.com/auth/callback",
+  "https://pix-national-eddie-alice.trycloudflare.com/auth/shopify/callback",
+  "https://pix-national-eddie-alice.trycloudflare.com/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-01"
+
+[pos]
+embedded = false
