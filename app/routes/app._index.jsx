@@ -1,280 +1,323 @@
-import { useEffect } from "react";
 import { json } from "@remix-run/node";
-import { useActionData, useNavigation, useSubmit } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
 import {
-  Page,
-  Layout,
-  Text,
-  Card,
-  Button,
-  BlockStack,
-  Box,
-  List,
-  Link,
-  InlineStack,
+    BlockStack,
+    Button,
+    Card,
+    Checkbox,
+    Form,
+    InlineStack,
+    Layout,
+    Page,
+    Select,
+    Text,
+    TextField
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
+import { useCallback, useEffect, useState } from "react";
+
+
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
-
-  return null;
+    const { admin, session } = await authenticate.admin(request);
+    const response = await admin.rest.resources.CarrierService.all({
+        session: session,
+    });
+    return json({ carrier: response.data });
 };
 
 export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($input: ProductInput!) {
-        productCreate(input: $input) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
+    const { admin, session } = await authenticate.admin(request);
+    const bodyText = await request.text();
+    const body = new URLSearchParams(bodyText);
+
+
+
+
+
+
+    switch (body.get('action')) {
+        case 'create': {
+            const name = body.get('name');
+            const callback_url = body.get('callback_url');
+            const service_discovery = body.get('service_discovery') ?? false;
+            try {
+                const carrier_service = new admin.rest.resources.CarrierService({ session: session });
+
+                carrier_service.name = name;
+                carrier_service.callback_url = callback_url;
+                carrier_service.service_discovery = service_discovery;
+                await carrier_service.save({
+                    update: true,
+                });
+                return json({ carrier: carrier_service });
+
+            } catch (error) {
+                return json({ carrier: error });
             }
-          }
         }
-      }`,
-    {
-      variables: {
-        input: {
-          title: `${color} Snowboard`,
-          variants: [{ price: Math.random() * 100 }],
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
+        case 'remove': {
+            const id = body.get('id');
 
-  return json({
-    product: responseJson.data?.productCreate?.product,
-  });
-};
+            try {
+                await admin.rest.resources.CarrierService.delete({
+                    session: session,
+                    id: id,
+                });
 
-export default function Index() {
-  const nav = useNavigation();
-  const actionData = useActionData();
-  const submit = useSubmit();
-  const isLoading =
-    ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
-  const productId = actionData?.product?.id.replace(
-    "gid://shopify/Product/",
-    "",
-  );
+                return json({ carrier: "deleted" });
 
-  useEffect(() => {
-    if (productId) {
-      shopify.toast.show("Product created");
+            } catch (error) {
+                return json({ carrier: error });
+            }
+        }
     }
-  }, [productId]);
-  const generateProduct = () => submit({}, { replace: true, method: "POST" });
 
-  return (
-    <Page>
-      <ui-title-bar title="Remix app template">
-        <button variant="primary" onClick={generateProduct}>
-          Generate a product
-        </button>
-      </ui-title-bar>
-      <BlockStack gap="500">
-        <Layout>
-          <Layout.Section>
-            <Card>
-              <BlockStack gap="500">
-                <BlockStack gap="200">
-                  <Text as="h2" variant="headingMd">
-                    Congrats on creating a new Shopify app 🎉
-                  </Text>
-                  <Text variant="bodyMd" as="p">
-                    This embedded app template uses{" "}
-                    <Link
-                      url="https://shopify.dev/docs/apps/tools/app-bridge"
-                      target="_blank"
-                      removeUnderline
-                    >
-                      App Bridge
-                    </Link>{" "}
-                    interface examples like an{" "}
-                    <Link url="/app/additional" removeUnderline>
-                      additional page in the app nav
-                    </Link>
-                    , as well as an{" "}
-                    <Link
-                      url="https://shopify.dev/docs/api/admin-graphql"
-                      target="_blank"
-                      removeUnderline
-                    >
-                      Admin GraphQL
-                    </Link>{" "}
-                    mutation demo, to provide a starting point for app
-                    development.
-                  </Text>
-                </BlockStack>
-                <BlockStack gap="200">
-                  <Text as="h3" variant="headingMd">
-                    Get started with products
-                  </Text>
-                  <Text as="p" variant="bodyMd">
-                    Generate a product with GraphQL and get the JSON output for
-                    that product. Learn more about the{" "}
-                    <Link
-                      url="https://shopify.dev/docs/api/admin-graphql/latest/mutations/productCreate"
-                      target="_blank"
-                      removeUnderline
-                    >
-                      productCreate
-                    </Link>{" "}
-                    mutation in our API references.
-                  </Text>
-                </BlockStack>
-                <InlineStack gap="300">
-                  <Button loading={isLoading} onClick={generateProduct}>
-                    Generate a product
-                  </Button>
-                  {actionData?.product && (
-                    <Button
-                      url={`shopify:admin/products/${productId}`}
-                      target="_blank"
-                      variant="plain"
-                    >
-                      View product
-                    </Button>
-                  )}
-                </InlineStack>
-                {actionData?.product && (
-                  <Box
-                    padding="400"
-                    background="bg-surface-active"
-                    borderWidth="025"
-                    borderRadius="200"
-                    borderColor="border"
-                    overflowX="scroll"
-                  >
-                    <pre style={{ margin: 0 }}>
-                      <code>{JSON.stringify(actionData.product, null, 2)}</code>
-                    </pre>
-                  </Box>
-                )}
-              </BlockStack>
-            </Card>
-          </Layout.Section>
-          <Layout.Section variant="oneThird">
-            <BlockStack gap="500">
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h2" variant="headingMd">
-                    App template specs
-                  </Text>
-                  <BlockStack gap="200">
-                    <InlineStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Framework
-                      </Text>
-                      <Link
-                        url="https://remix.run"
-                        target="_blank"
-                        removeUnderline
-                      >
-                        Remix
-                      </Link>
-                    </InlineStack>
-                    <InlineStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Database
-                      </Text>
-                      <Link
-                        url="https://www.prisma.io/"
-                        target="_blank"
-                        removeUnderline
-                      >
-                        Prisma
-                      </Link>
-                    </InlineStack>
-                    <InlineStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        Interface
-                      </Text>
-                      <span>
-                        <Link
-                          url="https://polaris.shopify.com"
-                          target="_blank"
-                          removeUnderline
-                        >
-                          Polaris
-                        </Link>
-                        {", "}
-                        <Link
-                          url="https://shopify.dev/docs/apps/tools/app-bridge"
-                          target="_blank"
-                          removeUnderline
-                        >
-                          App Bridge
-                        </Link>
-                      </span>
-                    </InlineStack>
-                    <InlineStack align="space-between">
-                      <Text as="span" variant="bodyMd">
-                        API
-                      </Text>
-                      <Link
-                        url="https://shopify.dev/docs/api/admin-graphql"
-                        target="_blank"
-                        removeUnderline
-                      >
-                        GraphQL API
-                      </Link>
-                    </InlineStack>
-                  </BlockStack>
-                </BlockStack>
-              </Card>
-              <Card>
-                <BlockStack gap="200">
-                  <Text as="h2" variant="headingMd">
-                    Next steps
-                  </Text>
-                  <List>
-                    <List.Item>
-                      Build an{" "}
-                      <Link
-                        url="https://shopify.dev/docs/apps/getting-started/build-app-example"
-                        target="_blank"
-                        removeUnderline
-                      >
-                        {" "}
-                        example app
-                      </Link>{" "}
-                      to get started
-                    </List.Item>
-                    <List.Item>
-                      Explore Shopify’s API with{" "}
-                      <Link
-                        url="https://shopify.dev/docs/apps/tools/graphiql-admin-api"
-                        target="_blank"
-                        removeUnderline
-                      >
-                        GraphiQL
-                      </Link>
-                    </List.Item>
-                  </List>
-                </BlockStack>
-              </Card>
-            </BlockStack>
-          </Layout.Section>
-        </Layout>
-      </BlockStack>
-    </Page>
-  );
+    // when i click addd
+
+
+    //when i click remove 
+
+
 }
+
+
+
+
+export default function AdditionalPage() {
+    const [name, setName] = useState('');
+    const [discovery, setDiscovery] = useState(false);
+    const [url, setUrl] = useState('');
+
+    const [selectedTrigger, setSelectedTrigger] = useState('Postal code');
+    const [selectedCurrency, setSelectedCurrency] = useState('INR');
+    const [phoneRequired, setPhoneRequired] = useState(false);
+    const [triggerValue, setTriggerValue] = useState("");
+    const [carrierCharge, setCarrierCharge] = useState("");
+
+    const nav = useNavigation();
+    const data = useLoaderData();
+    const submit = useSubmit();
+    const actionData = useActionData();
+
+
+
+    const isLoading =
+        ["loading", "submitting"].includes(nav.state) && nav.formMethod === "POST";
+
+    const productId = actionData?.carrier?.admin_graphql_api_id?.replace(
+        "gid://shopify/Product/",
+        "",
+    );
+
+    const isDeleted = actionData?.carrier === "deleted";
+    const isCarrierAvailable = data?.carrier.length > 0
+
+    useEffect(() => {
+        if (productId) {
+            shopify.toast.show("Carrier service created");
+        }
+        if (isDeleted) {
+            shopify.toast.show("Carrier service removed");
+        }
+    }, [productId, isDeleted]);
+
+
+
+    const handleCheckBoxChange = useCallback((newChecked) => setDiscovery(newChecked), []);
+
+    const handleCheckBoxChangePhone = useCallback((newChecked) => setPhoneRequired(newChecked), []);
+
+    const handleAddSubmit = (e) => {
+        setName('');
+        setUrl('');
+        setDiscovery(false);
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        submit({ ...Object.fromEntries(formData), action: 'create' }, { method: "POST" });
+    };
+
+    const handleRuleSubmit = (e) => {
+        setSelectedTrigger("")
+        setSelectedCurrency("")
+        setPhoneRequired(false)
+        setTriggerValue("")
+        setCarrierCharge("")
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        console.log(formData, { ...Object.fromEntries(formData), action: 'create-rule' }, "form data")
+        // submit({ ...Object.fromEntries(formData), action: 'rule' }, { method: "POST" });
+    };
+
+    const handleRemove = (id) => {
+        submit({ id: id, action: 'remove' }, { method: "POST" });
+    };
+
+    const handleSelectChange = useCallback(
+        (value) => setSelectedTrigger(value),
+        [],
+    );
+    const handleCurrencyChange = useCallback(
+        (value) => {
+            setSelectedCurrency(value)
+            console.log(value, "currency value")
+        },
+        [],
+    );
+
+    return (
+        <Page>
+            <ui-title-bar title="Custom carrier services" />
+            <Layout>
+                <Layout.Section  >
+                    <BlockStack gap={200} align="space-between">
+                        <Text fontWeight="medium">Available carrier services</Text>
+
+                        {isCarrierAvailable ? (
+                            data.carrier.map((carrier) => (
+                                <Card key={carrier.id}>
+                                    <BlockStack gap={200}>
+                                        <InlineStack align="space-between">
+                                            <Text fontWeight="bold"> {carrier.name}</Text>
+                                            <Button variant="primary" tone="critical" loading={isLoading} onClick={() => handleRemove(carrier.id)}>delete</Button>
+                                        </InlineStack>
+                                        <Text>Id: {carrier.id}</Text>
+                                        <Text>Public URL: {carrier.callback_url}</Text>
+                                        <Text>Service discovery: {carrier.service_discovery ? "true" : "false"}</Text>
+                                    </BlockStack>
+                                </Card>
+                            ))
+                        ) : (
+                            <Card>
+                                <Text>No carrier services available</Text>
+                            </Card>
+                        )}
+                    </BlockStack>
+
+                </Layout.Section>
+                {/* create carrier service */}
+                {
+                    data?.carrier.length === 0 ?
+                        <Layout.Section variant="oneThird">
+                            <BlockStack gap={200} align="space-between">
+                                <Text fontWeight="medium">Create carrier services</Text>
+                                <Card >
+                                    <Form onSubmit={handleAddSubmit}>
+                                        <BlockStack gap={200} align="space-evenly">
+                                            <TextField
+                                                value={name}
+                                                onChange={setName}
+                                                label="Name"
+                                                name="name"
+                                                type="text"
+                                                helpText={
+                                                    <span>
+                                                        Provide a name for the carrier service.
+                                                    </span>
+                                                }
+                                            />
+                                            <TextField
+                                                value={url}
+                                                onChange={setUrl}
+                                                label="Callback URL"
+                                                name="callback_url"
+                                                type="text"
+                                                helpText={
+                                                    <span>
+                                                        Provide the public URL for the carrier service.
+                                                    </span>
+                                                }
+                                            />
+                                            <Checkbox
+                                                checked={discovery}
+                                                value={discovery}
+                                                onChange={handleCheckBoxChange}
+                                                label="Service Discovery"
+                                                name="service_discovery"
+                                                helpText={
+                                                    <span>
+                                                        Make the carrier service available to all merchants.
+                                                    </span>
+                                                }
+                                            />
+                                            <Button variant="primary" loading={isLoading} submit>Create</Button>
+                                        </BlockStack>
+                                    </Form>
+                                </Card>
+                            </BlockStack>
+                        </Layout.Section> :
+                        <Layout.Section variant="oneThird">
+                            <BlockStack gap={200} align="space-between">
+                                <Text fontWeight="medium">Create Shiping rate rules</Text>
+                                <Card >
+                                    <Form onSubmit={handleRuleSubmit}>
+                                        <BlockStack gap={200} align="space-evenly">
+                                            <Select
+                                                name="trigger"
+                                                label="Select trigger"
+                                                options={[{ label: 'Pincode', value: 'pincode' },]}
+                                                onChange={handleSelectChange}
+                                                value={selectedTrigger}
+                                            />
+                                            <Select
+                                                name="currency"
+                                                label="Select Currency"
+                                                options={
+                                                    [
+                                                        { label: 'INR', value: 'INR' },
+                                                        { label: 'USD', value: 'USD' }
+                                                    ]
+                                                }
+                                                onChange={handleCurrencyChange}
+                                                value={selectedCurrency}
+                                            />
+                                            <TextField
+                                                value={triggerValue}
+                                                onChange={setTriggerValue}
+                                                label="Trigger value"
+                                                placeholder="0"
+                                                name="trigger_value"
+                                                type="text"
+                                                helpText={
+                                                    <span>
+                                                        Provide the trigger value for custom rates.
+                                                    </span>
+                                                }
+                                            />
+                                            <TextField
+                                                value={carrierCharge}
+                                                onChange={setCarrierCharge}
+                                                label="Carrier Charge"
+                                                placeholder="0"
+                                                name="carrier_charge"
+                                                type="text"
+                                                helpText={
+                                                    <span>
+                                                        Provide the trigger value for custom rates.
+                                                    </span>
+                                                }
+                                            />
+                                            <Checkbox
+                                                checked={phoneRequired}
+                                                value={phoneRequired}
+                                                onChange={handleCheckBoxChangePhone}
+                                                label="Require phone number"
+                                                name="require_phone_number"
+                                                helpText={
+                                                    <span>
+                                                        Make phone number required for the carrier service.
+                                                    </span>
+                                                }
+                                            />
+                                            <Button variant="primary" loading={isLoading} submit>Create</Button>
+                                        </BlockStack>
+                                    </Form>
+                                </Card>
+                            </BlockStack>
+                        </Layout.Section>
+                }
+            </Layout>
+        </Page>
+    );
+}
+
