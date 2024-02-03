@@ -2,7 +2,7 @@
 
 client_id = "8fd71a0d9d970607cdf1a1e5ef48570b"
 name = "remix-trial"
-application_url = "https://circuits-kai-backing-honor.trycloudflare.com"
+application_url = "https://quoted-collectors-bosnia-evolution.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://circuits-kai-backing-honor.trycloudflare.com/auth/callback",
-  "https://circuits-kai-backing-honor.trycloudflare.com/auth/shopify/callback",
-  "https://circuits-kai-backing-honor.trycloudflare.com/api/auth/callback"
+  "https://quoted-collectors-bosnia-evolution.trycloudflare.com/auth/callback",
+  "https://quoted-collectors-bosnia-evolution.trycloudflare.com/auth/shopify/callback",
+  "https://quoted-collectors-bosnia-evolution.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

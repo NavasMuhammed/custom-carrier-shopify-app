@@ -15,6 +15,7 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { useCallback, useEffect, useState } from "react";
+import prisma from "../db.server";
 
 
 
@@ -23,15 +24,24 @@ export const loader = async ({ request }) => {
     const response = await admin.rest.resources.CarrierService.all({
         session: session,
     });
-    return json({ carrier: response.data });
+
+    const rules = await prisma.shippingRule.findMany({
+        where: { shop: session.shop },
+    });
+
+
+
+    return json({ carrier: response.data, rules: rules });
 };
 
 export const action = async ({ request }) => {
     const { admin, session } = await authenticate.admin(request);
+
+
     const bodyText = await request.text();
     const body = new URLSearchParams(bodyText);
 
-
+    const { shop } = session;
 
 
 
@@ -46,7 +56,7 @@ export const action = async ({ request }) => {
 
                 carrier_service.name = name;
                 carrier_service.callback_url = callback_url;
-                carrier_service.service_discovery = service_discovery;
+                carrier_service.service_discovery = JSON.parse(service_discovery);
                 await carrier_service.save({
                     update: true,
                 });
@@ -56,6 +66,53 @@ export const action = async ({ request }) => {
                 return json({ carrier: error });
             }
         }
+        case 'create-rule': {
+
+            console.log(body, "body")
+
+            const trigger = body.get('trigger');
+            const currency = body.get('currency');
+            const trigger_value = body.get('trigger_value');
+            const carrier_charge = body.get('carrier_charge');
+            const require_phone_number = JSON.parse(body.get('require_phone_number'));
+            const name = body.get('name');
+            const payload = {
+                shop,
+                name,
+                trigger,
+                currency,
+                trigger_value,
+                carrier_charge,
+                require_phone_number
+            }
+            try {
+                const resp = await prisma.shippingRule.create({
+                    data: { ...payload }
+                });
+
+                console.log(resp, "resp")
+                return json({ carrier: "created" });
+            } catch (error) {
+                console.log(error, "error")
+                return json({ carrier: error });
+            }
+        }
+
+        case 'remove-rule': {
+            const id = body.get('id');
+
+            try {
+                await prisma.shippingRule.delete({
+                    where: { id: id }
+                });
+
+                return json({ carrier: "deleted" });
+
+            } catch (error) {
+                return json({ carrier: error });
+            }
+        }
+
         case 'remove': {
             const id = body.get('id');
 
@@ -72,13 +129,6 @@ export const action = async ({ request }) => {
             }
         }
     }
-
-    // when i click addd
-
-
-    //when i click remove 
-
-
 }
 
 
@@ -94,6 +144,7 @@ export default function AdditionalPage() {
     const [phoneRequired, setPhoneRequired] = useState(false);
     const [triggerValue, setTriggerValue] = useState("");
     const [carrierCharge, setCarrierCharge] = useState("");
+    const [serviceName, setServiceName] = useState("");
 
     const nav = useNavigation();
     const data = useLoaderData();
@@ -112,6 +163,7 @@ export default function AdditionalPage() {
 
     const isDeleted = actionData?.carrier === "deleted";
     const isCarrierAvailable = data?.carrier.length > 0
+    const isRulesAvailabel = data?.rules.length > 0
 
     useEffect(() => {
         if (productId) {
@@ -129,32 +181,53 @@ export default function AdditionalPage() {
     const handleCheckBoxChangePhone = useCallback((newChecked) => setPhoneRequired(newChecked), []);
 
     const handleAddSubmit = (e) => {
+        e.preventDefault();
+        // const formData = new FormData(e.target);
+        const payload = {
+            name: name,
+            callback_url: url,
+            service_discovery: discovery
+        }
+        submit({ ...payload, action: 'create' }, { method: "POST" });
+
         setName('');
         setUrl('');
         setDiscovery(false);
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        submit({ ...Object.fromEntries(formData), action: 'create' }, { method: "POST" });
     };
 
     const handleRuleSubmit = (e) => {
+        e.preventDefault();
+        const payload = {
+            name: serviceName,
+            trigger: selectedTrigger,
+            currency: selectedCurrency,
+            trigger_value: triggerValue,
+            carrier_charge: carrierCharge,
+            require_phone_number: phoneRequired
+        }
+
+        console.log(payload, "form data");
+        submit({ ...payload, action: 'create-rule' }, { method: "POST" });
+
         setSelectedTrigger("")
         setSelectedCurrency("")
         setPhoneRequired(false)
         setTriggerValue("")
         setCarrierCharge("")
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        console.log(formData, { ...Object.fromEntries(formData), action: 'create-rule' }, "form data")
-        // submit({ ...Object.fromEntries(formData), action: 'rule' }, { method: "POST" });
     };
 
     const handleRemove = (id) => {
         submit({ id: id, action: 'remove' }, { method: "POST" });
     };
+    const handleRemoveRule = (id) => {
+        submit({ id: id, action: 'remove-rule' }, { method: "POST" });
+    };
 
     const handleSelectChange = useCallback(
-        (value) => setSelectedTrigger(value),
+        (value) => {
+            setSelectedTrigger(value)
+            console.log(value, "trigger value")
+        },
         [],
     );
     const handleCurrencyChange = useCallback(
@@ -171,27 +244,58 @@ export default function AdditionalPage() {
             <Layout>
                 <Layout.Section  >
                     <BlockStack gap={200} align="space-between">
-                        <Text fontWeight="medium">Available carrier services</Text>
+                        <BlockStack gap={200} align="space-between">
+                            <Text fontWeight="medium">Available carrier services</Text>
 
-                        {isCarrierAvailable ? (
-                            data.carrier.map((carrier) => (
-                                <Card key={carrier.id}>
-                                    <BlockStack gap={200}>
-                                        <InlineStack align="space-between">
-                                            <Text fontWeight="bold"> {carrier.name}</Text>
-                                            <Button variant="primary" tone="critical" loading={isLoading} onClick={() => handleRemove(carrier.id)}>delete</Button>
-                                        </InlineStack>
-                                        <Text>Id: {carrier.id}</Text>
-                                        <Text>Public URL: {carrier.callback_url}</Text>
-                                        <Text>Service discovery: {carrier.service_discovery ? "true" : "false"}</Text>
-                                    </BlockStack>
+                            {isCarrierAvailable ? (
+                                data.carrier.map((carrier) => (
+                                    <Card key={carrier.id}>
+                                        <BlockStack gap={200}>
+                                            <InlineStack align="space-between">
+                                                <Text fontWeight="bold"> {carrier.name}</Text>
+                                                <Button variant="primary" tone="critical" loading={isLoading} onClick={() => handleRemove(carrier.id)}>delete</Button>
+                                            </InlineStack>
+                                            <Text>Id: {carrier.id}</Text>
+                                            <Text>Public URL: {carrier.callback_url}</Text>
+                                            <Text>Service discovery: {carrier.service_discovery ? "true" : "false"}</Text>
+                                        </BlockStack>
+                                    </Card>
+                                ))
+                            ) : (
+                                <Card>
+                                    <Text>No carrier services available</Text>
                                 </Card>
-                            ))
-                        ) : (
-                            <Card>
-                                <Text>No carrier services available</Text>
-                            </Card>
-                        )}
+                            )}
+                        </BlockStack>
+                        <BlockStack gap={200} align="space-between">
+                            <BlockStack gap={200} align="space-between">
+                                <Text fontWeight="medium">Available rules</Text>
+
+                                {isRulesAvailabel ? (
+                                    data.rules.map((rule, index) => (
+                                        <Card key={index}>
+                                            <BlockStack gap={200}>
+                                                <InlineStack align="space-between">
+                                                    <Text fontWeight="bold"> {rule?.name ?? "untitled"}</Text>
+                                                    <Button variant="primary" tone="critical" loading={isLoading} onClick={() => handleRemoveRule(rule.id)}>delete</Button>
+                                                </InlineStack>
+                                                <Text>status: {rule.active ? 'active' : 'inactive'}</Text>
+                                                <Text>trigger: {rule.trigger}</Text>
+                                                <Text>currency: {rule.currency}</Text>
+                                                <Text>trigger_value: {rule.trigger_value}</Text>
+                                                <Text>carrier_charge: {rule.carrier_charge}</Text>
+                                                <Text>Phone required: {rule.require_phone_number ? "true" : "false"}</Text>
+                                            </BlockStack>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <Card>
+                                        <Text>No Rules created</Text>
+                                    </Card>
+                                )}
+                            </BlockStack>
+                        </BlockStack>
+
                     </BlockStack>
 
                 </Layout.Section>
@@ -252,10 +356,29 @@ export default function AdditionalPage() {
                                 <Card >
                                     <Form onSubmit={handleRuleSubmit}>
                                         <BlockStack gap={200} align="space-evenly">
+                                            <TextField
+                                                value={serviceName}
+                                                onChange={setServiceName}
+                                                label="Service Name"
+                                                placeholder="Standard Shipping"
+                                                name="standard_shipping"
+                                                type="text"
+                                                helpText={
+                                                    <span>
+                                                        Provide the service name to be displayed.
+                                                    </span>
+                                                }
+                                            />
                                             <Select
                                                 name="trigger"
                                                 label="Select trigger"
-                                                options={[{ label: 'Pincode', value: 'pincode' },]}
+                                                options={[
+                                                    { label: 'Postal code', value: 'postal code' },
+                                                    { label: 'Weight', value: 'weight' },
+                                                    { label: 'Price', value: 'price' },
+                                                    { label: 'Quantity', value: 'quantity' },
+                                                    { label: 'Custom', value: 'custom' },
+                                                ]}
                                                 onChange={handleSelectChange}
                                                 value={selectedTrigger}
                                             />
@@ -303,11 +426,6 @@ export default function AdditionalPage() {
                                                 onChange={handleCheckBoxChangePhone}
                                                 label="Require phone number"
                                                 name="require_phone_number"
-                                                helpText={
-                                                    <span>
-                                                        Make phone number required for the carrier service.
-                                                    </span>
-                                                }
                                             />
                                             <Button variant="primary" loading={isLoading} submit>Create</Button>
                                         </BlockStack>

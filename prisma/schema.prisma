@@ -1,22 +1,33 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
-  id          String    @id
+  uuid        String    @map("_id") @id @default(auto()) @db.ObjectId
+  id          String                @unique
   shop        String
   state       String
-  isOnline    Boolean   @default(false)
+  isOnline    Boolean               @default(false)
   scope       String?
   expires     DateTime?
   accessToken String
   userId      BigInt?
+}
+
+model ShippingRule {
+  id                   String   @map("_id") @id @default(auto()) @db.ObjectId
+  shop                 String               @unique
+  active               Boolean?             @default(true)
+  name                 String?
+  description          String?
+  trigger              String
+  currency             String
+  trigger_value        String
+  carrier_charge       String
+  require_phone_number Boolean              @default(false)
 }
