@@ -5,7 +5,7 @@ import { useActionData, useLoaderData, useNavigation, useSubmit } from "@remix-r
 const CarrierServiceCard = () => {
     const nav = useNavigation();
     const isLoading =
-        ["loading", "submitting"].includes(nav.state) && nav.formMethod;
+        ["loading", "submitting"].includes(nav.state) && nav.formMethod === "DELETE";
 
     console.log(nav, "nav here")
     console.log(nav.state, "nav state here")
@@ -18,7 +18,7 @@ const CarrierServiceCard = () => {
 
 
     const handleRemove = (id) => {
-        submit({ id: id, action: 'remove' }, { method: "POST", text: 'carrier-removed' });
+        submit({ id: id, action: 'remove' }, { method: "DELETE", text: 'carrier-removed' });
     };
 
 

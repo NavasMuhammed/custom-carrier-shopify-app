@@ -54,7 +54,7 @@ const CarrierServiceForm = () => {
         setDiscovery(false);
     };
     return (
-        <Form onSubmit={handleAddSubmit}>
+        <Form onSubmit={handleAddSubmit} action='create-carrier' >
             <BlockStack gap={200} align="space-evenly">
                 <TextField
                     value={name}

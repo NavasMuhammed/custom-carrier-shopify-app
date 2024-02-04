@@ -2,12 +2,10 @@
 
 client_id = "8fd71a0d9d970607cdf1a1e5ef48570b"
 name = "remix-trial"
-handle = "remix-trial-1"
-application_url = "https://insured-largest-raising-margaret.trycloudflare.com"
+application_url = "https://ufe-local.helixo.co"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
 dev_store_url = "quickstart-a1b140cb.myshopify.com"
 
 [access_scopes]
@@ -17,9 +15,9 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://insured-largest-raising-margaret.trycloudflare.com/auth/callback",
-  "https://insured-largest-raising-margaret.trycloudflare.com/auth/shopify/callback",
-  "https://insured-largest-raising-margaret.trycloudflare.com/api/auth/callback"
+  "https://ufe-local.helixo.co/auth/callback",
+  "https://ufe-local.helixo.co/auth/shopify/callback",
+  "https://ufe-local.helixo.co/api/auth/callback"
 ]
 
 [webhooks]

@@ -10,13 +10,13 @@ const ShipingRules = () => {
     const submit = useSubmit();
 
 
-    const isLoading = ["loading", "submitting"].includes(nav.state) && nav.formMethod;
+    const isLoading = ["loading", "submitting"].includes(nav.state) && nav.formMethod === "DELETE";
 
     const isDeleted = actionData?.rules === "deleted";
 
 
     const handleRemoveRule = (id) => {
-        submit({ id: id, action: 'remove-rule' }, { method: "POST", text: 'carrier-removed' });
+        submit({ id: id, action: 'remove-rule' }, { method: "DELETE", });
     };
 
     useEffect(() => {

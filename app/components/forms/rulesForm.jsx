@@ -81,7 +81,7 @@ const RulesForm = () => {
 
 
     return (
-        <Form onSubmit={handleRuleSubmit}>
+        <Form onSubmit={handleRuleSubmit} action='create-rule'>
             <BlockStack gap={200} align="space-evenly">
                 <TextField
                     value={serviceName}
