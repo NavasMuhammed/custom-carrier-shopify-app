@@ -3,16 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Session {
-  uuid        String    @map("_id") @id @default(auto()) @db.ObjectId
-  id          String                @unique
+  id          String     @unique @id
   shop        String
   state       String
-  isOnline    Boolean               @default(false)
+  isOnline    Boolean    @default(false)
   scope       String?
   expires     DateTime?
   accessToken String
@@ -20,14 +19,14 @@ model Session {
 }
 
 model ShippingRule {
-  id                   String   @map("_id") @id @default(auto()) @db.ObjectId
-  shop                 String               @unique
-  active               Boolean?             @default(true)
+  id                   String    @id @default(uuid())
+  shop                 String    
+  active               Boolean?  @default(true)
   name                 String?
   description          String?
   trigger              String
   currency             String
   trigger_value        String
   carrier_charge       String
-  require_phone_number Boolean              @default(false)
+  require_phone_number Boolean   @default(false)
 }
