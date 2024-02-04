@@ -1,4 +1,4 @@
-![image](https://github.com/NavasMuhammed/custom-carrier-shopify-app/assets/83510230/c5ba7f22-7fa9-496b-a0e0-96d25fb90567)# Custom Carrier Shopify App - Remix
+# Custom Carrier Shopify App - Remix
 
 This repository contains the source code for the Custom Carrier Shopify App, built using the Remix framework. The app allows merchants to create custom carriers and define multiple shipping rules based on various criteria such as postal codes.
 
