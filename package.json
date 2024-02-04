@@ -2,7 +2,7 @@
   "name": "remix-tried",
   "private": true,
   "scripts": {
-    "build": "remix build",
+    "build": "prisma generate && remix build",
     "predev": "prisma generate",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
@@ -16,6 +16,7 @@
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "shopify": "shopify",
     "prisma": "prisma",
+    "postinstall": "prisma generate",
     "graphql-codegen": "graphql-codegen"
   },
   "dependencies": {
