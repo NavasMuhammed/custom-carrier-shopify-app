@@ -20,10 +20,13 @@ To set up the Custom Carrier Shopify App, follow these steps:
 3. Install dependencies using your preferred package manager
 4. Hit npm run dev after setting prisma client
 
+## Deployment 
+1. Docker file is provided
+2. hosting the container on digitalocean is prefered
 
 ## app usage - dashboard
 ![image](https://github.com/NavasMuhammed/custom-carrier-shopify-app/assets/83510230/eb93a37a-fd64-4f51-9108-a0bad43232ca)
-1. This is the admin dashboard where merchants can createa a custom carrier provider
+1. This is the admin dashboard where merchants can create a custom carrier provider
 2. user have to provide a name and a public api url for managing thre rate logic .
 3. user have to set the app's url with a /api as a public url to use the app's rate rules
 
