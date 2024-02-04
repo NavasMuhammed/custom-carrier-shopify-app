@@ -6,10 +6,10 @@ This repository contains the source code for the Custom Carrier Shopify App, bui
 
 Before setting up the Custom Carrier Shopify App, ensure you have the following prerequisites:
 
-1. Node.js installed on your system. You can download and install Node.js from [here](https://nodejs.org/en/download/).
-2. Preferably a PostgreSQL database instance set up and accessible.
-3. Prisma as ORM
-4. Latest Shopify cli 
+1. Node.js: Ensure Node.js is installed on your system. You can download and install Node.js from  [here](https://nodejs.org/en/download/).
+2. PostgreSQL Database: Preferably, have a PostgreSQL database instance set up and accessible.
+3. Prisma ORM: Prisma should be installed and configured.
+4. Shopify CLI: Install the latest version of Shopify CLI.
 
 ## Setup
 
@@ -17,12 +17,38 @@ To set up the Custom Carrier Shopify App, follow these steps:
 
 1. Clone the repository or download the source code.
 2. Navigate to the project directory in your terminal.
-3. Install dependencies using your preferred package manager
-4. Hit npm run dev after setting prisma client
+3. Install dependencies using your preferred package manager.
+   
+Using npm:
+
+```shell
+npm install
+```
+### Local Development
+
+Using npm:
+
+```shell
+npm run dev
+```
+4. Configure Prisma to connect to your PostgreSQL database instance.
+If you used the CLI to create the template, you can skip this section.
+
+### Build
+
+Remix handles building the app for you, by running the command below with the package manager of your choice:
+
+Using npm:
+
+```shell
+npm run build
+```
 
 ## Deployment 
-1. Docker file is provided
-2. hosting the container on digitalocean is prefered
+For deployment, follow these steps:
+
+1. Utilize the provided Docker file for containerization.
+2. Host the container on DigitalOcean or your preferred hosting platform.
 
 ## app usage - dashboard
 ![image](https://github.com/NavasMuhammed/custom-carrier-shopify-app/assets/83510230/eb93a37a-fd64-4f51-9108-a0bad43232ca)
