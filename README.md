@@ -32,7 +32,7 @@ Using npm:
 npm run dev
 ```
 4. Configure Prisma to connect to your PostgreSQL database instance.
-If you used the CLI to create the template, you can skip this section.
+
 
 ### Build
 
