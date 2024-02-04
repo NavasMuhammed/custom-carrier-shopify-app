@@ -34,7 +34,7 @@ npm run dev
 4. Configure Prisma to connect to your PostgreSQL database instance.
 
 
-### Build
+## Build
 
 Remix handles building the app for you, by running the command below with the package manager of your choice:
 
